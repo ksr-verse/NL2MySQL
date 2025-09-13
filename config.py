@@ -1,4 +1,9 @@
-"""Configuration module for NL2SQL application."""
+"""Configuration module for NL2SQL application.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 import os
 from typing import Optional

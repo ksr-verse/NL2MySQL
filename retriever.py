@@ -1,4 +1,9 @@
-"""Schema retriever for finding relevant database schema chunks based on natural language queries."""
+"""Schema retriever for finding relevant database schema chunks based on natural language queries.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 from typing import List, Dict, Any, Optional, Set
 import chromadb

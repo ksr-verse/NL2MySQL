@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Enhanced prompt templates for IIQ Natural Language to SQL with synonyms and learning."""
+"""Enhanced prompt templates for IIQ Natural Language to SQL with synonyms and learning.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 from typing import Dict, Any, List, Optional
 from datetime import datetime

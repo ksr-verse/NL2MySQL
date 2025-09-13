@@ -1,4 +1,9 @@
-"""Local LLM adapter for Ollama and other local models."""
+"""Local LLM adapter for Ollama and other local models.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 import json
 import requests

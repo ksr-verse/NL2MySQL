@@ -1,4 +1,9 @@
-"""Schema embedder for creating vector embeddings of database schema."""
+"""Schema embedder for creating vector embeddings of database schema.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 import json
 import os

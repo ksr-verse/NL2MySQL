@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""IIQ Synonyms and Examples Management for Natural Language to SQL."""
+"""IIQ Synonyms and Examples Management for Natural Language to SQL.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 import json
 import os

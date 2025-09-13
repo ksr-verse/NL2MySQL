@@ -1,4 +1,9 @@
-"""MySQL database adapter for executing SQL queries."""
+"""MySQL database adapter for executing SQL queries.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 import mysql.connector
 from mysql.connector import Error

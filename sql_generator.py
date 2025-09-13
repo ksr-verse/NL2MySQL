@@ -1,4 +1,9 @@
-"""SQL generator that combines LLM, schema retrieval, validation, and optimization."""
+"""SQL generator that combines LLM, schema retrieval, validation, and optimization.
+
+NL2MySQL v1.0 - IdentityIQ Natural Language to SQL Generator
+Developed by: Kuldeep Singh Rautela
+Contact: rautela.ks.job@gmail.com for commercial licensing
+"""
 
 from typing import Dict, Any, Optional, List
 from loguru import logger
