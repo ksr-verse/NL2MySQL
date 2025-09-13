@@ -128,7 +128,7 @@ class SchemaInspector:
             return {}
         
         schema_info = {
-            "database_type": "mssql",
+            "database_type": "mysql",
             "schemas": {},
             "relationships": [],
             "metadata": {
@@ -147,8 +147,8 @@ class SchemaInspector:
             total_columns = 0
             
             for schema_name in schemas:
-                # Skip system schemas
-                if schema_name.lower() in ['information_schema', 'sys', 'guest', 'INFORMATION_SCHEMA']:
+                # Only process identityiq schema, skip all others
+                if schema_name.lower() != 'identityiq':
                     continue
                 
                 schema_info["schemas"][schema_name] = {

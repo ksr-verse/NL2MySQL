@@ -188,9 +188,12 @@ Try these natural language queries:
    - **Database** (`db_mysql.py`) - MySQL operations and query execution
 
 4. **IIQ Knowledge System**
-   - **Synonyms Manager** (`iiq_synonyms.py`) - Maps natural language to IIQ terms
+   - **Consolidated Training** (`iiq_training_data.py`) - **ALL training data in one place**
+     - Synonyms and mappings
+     - Example queries  
+     - Entity relationships
+     - Query patterns
    - **Feedback System** (`iiq_feedback.py`) - Learning and continuous improvement
-   - **Training Data** (`iiq_training_data.json`) - Example queries and corrections
 
 5. **Prompt Templates**
    - **Enhanced Templates** (`prompt_templates_enhanced.py`) - IIQ-specific prompts with synonyms and learning
@@ -315,6 +318,39 @@ This project demonstrates the integration of several open-source technologies:
 - **Ollama** for local LLM serving
 - **SQLAlchemy** for database introspection
 - **Sentence Transformers** for text embeddings
+
+---
+
+## Training Data Management
+
+### **Single File Approach** 
+All training data is now consolidated in **`iiq_training_data.py`**:
+
+```python
+# Add new synonyms
+iiq_training.add_synonym("contractors", "spt_identity")
+
+# Add new examples  
+iiq_training.add_example(
+    "Show me all contractors",
+    "SELECT * FROM spt_identity WHERE employee_type = 'Contractor'",
+    "Query for contractor employees"
+)
+```
+
+### **Schema Management**
+- **`schema.json`** - Auto-generated from database (DO NOT edit manually)
+- **Regenerate schema**: `python schema_inspector.py` (pulls from live DB)
+- **Reset vector DB**: `python schema_embedder.py --reset --verbose`
+
+### **Complete Refresh Workflow**
+When you make changes to training data:
+
+1. **Edit `iiq_training_data.py`** - Add your examples, synonyms, mappings
+2. **Regenerate schema** (if DB changed): `python schema_inspector.py`  
+3. **Reset vector DB**: `python schema_embedder.py --reset --verbose`
+4. **Restart API** to pick up changes
+5. **Test with a query** to verify new knowledge is working
 
 ---
 

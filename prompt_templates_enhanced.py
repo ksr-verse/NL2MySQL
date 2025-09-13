@@ -9,7 +9,7 @@ Contact: rautela.ks.job@gmail.com for commercial licensing
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from loguru import logger
-from iiq_synonyms import IIQSynonymsManager
+from iiq_training_data import iiq_training
 from iiq_feedback import IIQFeedbackManager
 
 
@@ -18,7 +18,7 @@ class EnhancedPromptTemplates:
     
     def __init__(self):
         """Initialize with synonyms and feedback managers."""
-        self.synonyms_manager = IIQSynonymsManager()
+        self.training_data = iiq_training
         self.feedback_manager = IIQFeedbackManager()
     
     def get_system_prompt(self) -> str:
@@ -85,21 +85,21 @@ RESPONSE FORMAT: Return ONLY the MySQL SQL query without explanation"""
         
         # 2. Synonyms mapping
         if include_synonyms:
-            synonyms_text = self.synonyms_manager.get_synonyms_text()
+            synonyms_text = self._get_synonyms_text()
             prompt_parts.append(synonyms_text)
         
         # 3. Schema context
         prompt_parts.append(f"DATABASE SCHEMA:\n{schema_context}")
         
-        # 4. Relevant examples from learning data
-        if include_examples and include_learning:
-            relevant_examples = self.feedback_manager.get_relevant_learning(user_query, limit=3)
-            if relevant_examples:
-                examples_text = "RELEVANT EXAMPLES FROM LEARNING DATA:\n"
-                for i, example in enumerate(relevant_examples, 1):
-                    examples_text += f"\n{i}. Human: {example['natural_language']}\n"
-                    examples_text += f"   SQL: {example['sql_query']}\n"
-                prompt_parts.append(examples_text)
+        # 4. Relevant examples from training data
+        if include_examples:
+            examples_text = "IIQ TRAINING EXAMPLES:\n"
+            for i, example in enumerate(self.training_data.examples[:3], 1):
+                examples_text += f"\n{i}. Human: {example['natural_language']}\n"
+                examples_text += f"   SQL: {example['sql']}\n"
+                if example.get('explanation'):
+                    examples_text += f"   Note: {example['explanation']}\n"
+            prompt_parts.append(examples_text)
         
         # 5. User query
         prompt_parts.append(f"USER QUERY: {user_query}")
@@ -109,9 +109,27 @@ RESPONSE FORMAT: Return ONLY the MySQL SQL query without explanation"""
         
         return "\n\n".join(prompt_parts)
     
+    def _get_synonyms_text(self) -> str:
+        """Get formatted synonyms text."""
+        synonyms_text = "IIQ SYNONYMS MAPPING:\n"
+        for human_term, db_term in self.training_data.synonyms.items():
+            synonyms_text += f"- '{human_term}' → {db_term}\n"
+        return synonyms_text
+    
+    def _find_synonyms(self, user_query: str) -> Dict[str, str]:
+        """Find synonyms in user query."""
+        found_synonyms = {}
+        query_lower = user_query.lower()
+        
+        for human_term, db_term in self.training_data.synonyms.items():
+            if human_term.lower() in query_lower:
+                found_synonyms[human_term] = db_term
+        
+        return found_synonyms
+    
     def get_synonyms_context(self, user_query: str) -> str:
         """Get synonyms context for the user query."""
-        found_synonyms = self.synonyms_manager.find_synonyms(user_query)
+        found_synonyms = self._find_synonyms(user_query)
         
         if not found_synonyms:
             return "No synonyms found in query."
@@ -241,7 +259,7 @@ Write a MySQL query:"""
         """Build optimized prompt for Ollama (shorter, faster)."""
         
         # Get synonyms for the query
-        synonyms = self.synonyms_manager.find_synonyms(user_query)
+        synonyms = self._find_synonyms(user_query)
         synonyms_text = ""
         if synonyms:
             synonyms_text = f"\nSynonyms: {', '.join([f'{k}→{v}' for k, v in synonyms.items()])}\n"
@@ -271,7 +289,7 @@ Generate MySQL query:"""
         """Build optimized prompt for Ollama (shorter, faster)."""
         
         # Get synonyms for the query
-        synonyms = self.synonyms_manager.find_synonyms(user_query)
+        synonyms = self._find_synonyms(user_query)
         synonyms_text = ""
         if synonyms:
             synonyms_text = f"\nSynonyms: {', '.join([f'{k}→{v}' for k, v in synonyms.items()])}\n"
