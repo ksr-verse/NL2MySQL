@@ -60,16 +60,6 @@ class ExecuteRequest(BaseModel):
     timeout: int = Field(default=30, description="Query timeout in seconds", ge=5, le=300)
 
 
-class ValidateRequest(BaseModel):
-    """Request model for SQL validation."""
-    sql: str = Field(..., description="SQL query to validate", min_length=1)
-    validation_level: str = Field(default="standard", description="Validation level: basic, standard, strict")
-
-
-class OptimizeRequest(BaseModel):
-    """Request model for SQL optimization."""
-    sql: str = Field(..., description="SQL query to optimize", min_length=1)
-    optimization_level: str = Field(default="standard", description="Optimization level: basic, standard, aggressive")
 
 
 class QueryResponse(BaseModel):
@@ -323,145 +313,14 @@ async def execute_sql(
         )
 
 
-@app.post("/validate")
-async def validate_sql(
-    request: ValidateRequest,
-    generator: SQLGenerator = Depends(get_sql_generator)
-):
-    """Validate SQL query."""
-    try:
-        logger.info("Validating SQL query")
-        
-        # Parse validation level
-        try:
-            validation_level = ValidationLevel(request.validation_level.lower())
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid validation level: {e}")
-        
-        # Update validator level if different
-        if generator.validator.validation_level != validation_level:
-            generator.validator.validation_level = validation_level
-        
-        # Validate the query
-        result = generator.validator.validate_query(request.sql)
-        
-        return {
-            "success": True,
-            "validation_result": result
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error validating SQL: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
 
 
-@app.post("/optimize")
-async def optimize_sql(
-    request: OptimizeRequest,
-    generator: SQLGenerator = Depends(get_sql_generator)
-):
-    """Optimize SQL query."""
-    try:
-        logger.info("Optimizing SQL query")
-        
-        # Parse optimization level
-        try:
-            optimization_level = OptimizationLevel(request.optimization_level.lower())
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=f"Invalid optimization level: {e}")
-        
-        # Update optimizer level if different
-        if generator.optimizer.optimization_level != optimization_level:
-            generator.optimizer.optimization_level = optimization_level
-        
-        # Optimize the query
-        result = generator.optimizer.optimize_query(request.sql)
-        
-        return {
-            "success": True,
-            "optimization_result": result
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error optimizing SQL: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
 
 
-@app.post("/analyze")
-async def analyze_query(
-    sql: str,
-    generator: SQLGenerator = Depends(get_sql_generator)
-):
-    """Analyze query complexity and performance."""
-    try:
-        logger.info("Analyzing query complexity")
-        
-        result = generator.analyze_query_complexity(sql)
-        
-        return {
-            "success": True,
-            "analysis_result": result
-        }
-        
-    except Exception as e:
-        logger.error(f"Error analyzing query: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
 
 
-@app.get("/schema/suggestions")
-async def get_schema_suggestions(
-    query: str,
-    generator: SQLGenerator = Depends(get_sql_generator)
-):
-    """Get schema suggestions for a natural language query."""
-    try:
-        logger.info(f"Getting schema suggestions for: {query}")
-        
-        result = generator.get_schema_suggestions(query)
-        
-        return {
-            "success": True,
-            "suggestions": result
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting schema suggestions: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
 
 
-@app.get("/schema/info")
-async def get_schema_info(generator: SQLGenerator = Depends(get_sql_generator)):
-    """Get information about the loaded schema."""
-    try:
-        info = generator.retriever.get_collection_info()
-        
-        return {
-            "success": True,
-            "schema_info": info
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting schema info: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
 
 
 # Error handlers
@@ -493,34 +352,6 @@ async def general_exception_handler(request, exc):
 
 
 # Additional utility endpoints
-@app.get("/models/info")
-async def get_model_info(generator: SQLGenerator = Depends(get_sql_generator)):
-    """Get information about available models."""
-    try:
-        info = {
-            "llm_provider": settings.llm.provider,
-            "model_name": getattr(generator.llm_adapter, 'model_name', 'unknown'),
-            "available": generator.llm_adapter.is_available() if generator.llm_adapter else False
-        }
-        
-        # Get available models if supported
-        if hasattr(generator.llm_adapter, 'get_available_models'):
-            try:
-                info["available_models"] = generator.llm_adapter.get_available_models()
-            except:
-                pass
-        
-        return {
-            "success": True,
-            "model_info": info
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting model info: {e}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
 
 
 if __name__ == "__main__":

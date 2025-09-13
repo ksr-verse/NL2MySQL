@@ -226,8 +226,7 @@ NL2MySQL/
 ├── sql_generator.py          # Main orchestrator
 ├── retriever.py              # Schema retrieval
 ├── schema_embedder.py        # ChromaDB embeddings
-├── prompt_templates.py       # Basic prompts
-├── prompt_templates_enhanced.py # Enhanced prompts
+├── prompt_templates_enhanced.py # Enhanced prompts with IIQ knowledge
 ├── validator.py              # SQL validation
 ├── optimizer.py              # Query optimization
 ├── iiq_synonyms.py           # IIQ knowledge

@@ -1,4 +1,4 @@
-# NL2SQL Dockerfile
+# NL2MySQL Dockerfile
 FROM python:3.11-slim
 
 # Set working directory
@@ -9,23 +9,13 @@ ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install system dependencies for MySQL
 RUN apt-get update && apt-get install -y \
     curl \
-    unixodbc \
-    unixodbc-dev \
-    freetds-dev \
-    freetds-bin \
-    tdsodbc \
+    default-libmysqlclient-dev \
+    pkg-config \
     gcc \
     g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Microsoft ODBC Driver for SQL Server
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching

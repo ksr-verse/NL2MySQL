@@ -4,7 +4,6 @@ from typing import Dict, Any, Optional, List
 from loguru import logger
 
 from retriever import SchemaRetriever
-from prompt_templates import PromptTemplates, PromptBuilder
 from prompt_templates_enhanced import EnhancedPromptTemplates
 from validator import SQLValidator, ValidationLevel
 from optimizer import SQLOptimizer, OptimizationLevel
@@ -27,7 +26,6 @@ class SQLGenerator:
         self.retriever = SchemaRetriever()
         self.validator = SQLValidator(validation_level)
         self.optimizer = SQLOptimizer(optimization_level)
-        self.prompt_templates = PromptTemplates()
         self.enhanced_templates = EnhancedPromptTemplates()
         
         # Initialize feedback manager
@@ -284,10 +282,11 @@ class SQLGenerator:
     def _generate_explanation(self, sql_query: str, schema_context: str) -> str:
         """Generate explanation for the SQL query."""
         try:
-            explanation_prompt = self.prompt_templates.get_query_explanation_prompt().format(
-                sql_query=sql_query,
-                schema_context=schema_context
-            )
+            explanation_prompt = f"""EXPLANATION REQUEST:
+SQL Query: {sql_query}
+Schema Context: {schema_context}
+
+Please explain what this query does in plain English."""
             
             if hasattr(self.llm_adapter, 'generate_sql'):
                 return self.llm_adapter.generate_sql(explanation_prompt)
@@ -334,53 +333,7 @@ class SQLGenerator:
         
         return result
     
-    def analyze_query_complexity(self, sql_query: str) -> Dict[str, Any]:
-        """Analyze the complexity of a SQL query."""
-        try:
-            # Get complexity from validator
-            complexity_result = self.validator.get_query_complexity_score(sql_query)
-            
-            # Get performance analysis from optimizer
-            performance_result = self.optimizer.analyze_query_performance(sql_query)
-            
-            return {
-                "complexity": complexity_result,
-                "performance": performance_result,
-                "success": True
-            }
-            
-        except Exception as e:
-            logger.error(f"Error analyzing query complexity: {e}")
-            return {
-                "complexity": {},
-                "performance": {},
-                "success": False,
-                "error": str(e)
-            }
     
-    def get_schema_suggestions(self, natural_language_query: str) -> Dict[str, Any]:
-        """Get schema suggestions for a natural language query."""
-        try:
-            retrieved_schema = self.retriever.retrieve_relevant_schema(natural_language_query)
-            
-            suggestions = {
-                "relevant_tables": list(retrieved_schema.get("tables", {}).keys()),
-                "relationships": retrieved_schema.get("relationships", []),
-                "schema_context": self.retriever.format_schema_context(retrieved_schema),
-                "success": True
-            }
-            
-            return suggestions
-            
-        except Exception as e:
-            logger.error(f"Error getting schema suggestions: {e}")
-            return {
-                "relevant_tables": [],
-                "relationships": [],
-                "schema_context": "",
-                "success": False,
-                "error": str(e)
-            }
     
     def health_check(self) -> Dict[str, Any]:
         """Check the health of all components."""
@@ -455,15 +408,6 @@ def main():
                     print(f"    - {issue}")
             return
         
-        if args.schema_suggestions:
-            suggestions = generator.get_schema_suggestions(args.query)
-            print("Schema Suggestions:")
-            print(f"  Relevant Tables: {suggestions['relevant_tables']}")
-            if suggestions['relationships']:
-                print("  Relationships:")
-                for rel in suggestions['relationships']:
-                    print(f"    - {rel}")
-            return
         
         # Generate SQL
         result = generator.generate_sql(
