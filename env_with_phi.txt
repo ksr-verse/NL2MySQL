@@ -1,0 +1,36 @@
+# NL2MySQL Environment Configuration
+# MySQL Database Configuration (SailPoint IdentityIQ)
+DB_CONNECTION_STRING=mysql+pymysql://root:root@localhost:3306/identityiq
+DB_MAX_POOL_SIZE=10
+DB_TIMEOUT=30
+
+# LLM Configuration - UPDATED FOR PHI MODEL
+LLM_PROVIDER=local  # Options: 'local' or 'openai'
+
+# Local LLM Settings (for Ollama) - Using available phi model
+LLM_LOCAL_MODEL=phi
+LLM_LOCAL_URL=http://localhost:11434
+
+# OpenAI Settings (if using OpenAI)
+# LLM_OPENAI_API_KEY=your_openai_api_key_here
+LLM_OPENAI_MODEL=gpt-3.5-turbo
+
+# Generation Parameters
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=1000
+
+# Vector Database Configuration
+VECTOR_PERSIST_DIRECTORY=./chromadb
+VECTOR_COLLECTION_NAME=schema_embeddings
+VECTOR_EMBEDDING_MODEL=all-MiniLM-L6-v2
+VECTOR_TOP_K=5
+
+# Application Configuration
+APP_DEBUG=false
+APP_LOG_LEVEL=INFO
+APP_HOST=0.0.0.0
+APP_PORT=8000
+
+# Schema Files
+APP_SCHEMA_FILE=schema_identityiq.json
+APP_MANUAL_SCHEMA_FILE=schema_manual.json

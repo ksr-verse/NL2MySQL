@@ -1,0 +1,175 @@
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           NL2MySQL SYSTEM ARCHITECTURE                         │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────┐
+                    │   USER INPUT    │
+                    │ Natural Language│
+                    │ Query           │
+                    └─────────┬───────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │   WEB FRONTEND  │
+                    │   Streamlit     │
+                    │   Interface     │
+                    └─────────┬───────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │   API GATEWAY   │
+                    │   FastAPI       │
+                    │   Backend       │
+                    └─────────┬───────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              CORE PROCESSING LAYER                             │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  SQL GENERATOR  │◀──▶│  SCHEMA RETRIEVER│◀──▶│  PROMPT BUILDER │
+│                 │    │                 │    │                 │
+│ • Orchestrates  │    │ • ChromaDB      │    │ • Enhanced      │
+│ • Coordinates   │    │ • Vector Search │    │ • Templates     │
+│ • Manages Flow  │    │ • Schema Context│    │ • IIQ Knowledge │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  LLM ADAPTER    │    │  SCHEMA EMBEDDER│    │  SYNONYMS MGR   │
+│                 │    │                 │    │                 │
+│ • Ollama (Phi)  │    │ • Sentence      │    │ • IIQ Terms     │
+│ • GPT-OSS       │    │   Transformers  │    │ • Natural Lang  │
+│ • SQLCoder      │    │ • ChromaDB      │    │ • Mappings      │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  VALIDATOR      │    │  OPTIMIZER      │    │  FEEDBACK MGR   │
+│                 │    │                 │    │                 │
+│ • SQL Syntax    │    │ • Performance   │    │ • Learning      │
+│ • Security      │    │ • Index Usage   │    │ • Corrections   │
+│ • Logic Check   │    │ • Query Plan    │    │ • Training Data │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              DATA LAYER                                        │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  MYSQL DATABASE │    │  CHROMADB       │    │  TRAINING DATA  │
+│                 │    │                 │    │                 │
+│ • IdentityIQ    │    │ • Schema        │    │ • Examples      │
+│ • spt_identity  │    │   Embeddings    │    │ • Corrections   │
+│ • spt_link      │    │ • Vector Search │    │ • Learning      │
+│ • spt_application│   │ • Similarity    │    │ • Feedback      │
+│ • spt_entitlement│   │   Matching      │    │ • Synonyms      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              REQUEST FLOW                                      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+1. USER INPUT: "Give me employees with Workday accounts"
+   │
+   ▼
+2. API GATEWAY: FastAPI /query endpoint
+   │
+   ▼
+3. SQL GENERATOR: Orchestrates the entire process
+   │
+   ├──► SCHEMA RETRIEVAL: ChromaDB vector search
+   │    │
+   │    ▼
+   │    SCHEMA EMBEDDER: Sentence transformers
+   │
+   ├──► PROMPT BUILDING: Enhanced templates
+   │    │
+   │    ├──► SYNONYMS MANAGER: IIQ term mapping
+   │    └──► TRAINING DATA: Examples and corrections
+   │
+   ├──► LLM GENERATION: Ollama Phi model
+   │    │
+   │    ▼
+   │    SQL OUTPUT: Generated query
+   │
+   ├──► VALIDATION: SQL syntax and security
+   │
+   ├──► OPTIMIZATION: Performance tuning
+   │
+   └──► FEEDBACK: Learning and improvement
+       │
+       ▼
+4. RESPONSE: SQL + metadata + learning data
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              COMPONENT DETAILS                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐
+│   API LAYER     │
+├─────────────────┤
+│ • /query        │ - Natural language to SQL
+│ • /execute      │ - Direct SQL execution  
+│ • /health       │ - System health check
+│ • /docs         │ - API documentation
+└─────────────────┘
+
+┌─────────────────┐
+│  LLM MODELS     │
+├─────────────────┤
+│ • Phi:latest    │ - 1.6GB (current)
+│ • GPT-OSS:20b   │ - 13GB (available)
+│ • SQLCoder      │ - SQL-specific
+│ • OpenAI        │ - Cloud option
+└─────────────────┘
+
+┌─────────────────┐
+│  IIQ KNOWLEDGE  │
+├─────────────────┤
+│ • Synonyms      │ - "users" → "spt_identity"
+│ • Examples      │ - Training queries
+│ • Relationships │ - Table connections
+│ • Patterns      │ - Query templates
+└─────────────────┘
+
+┌─────────────────┐
+│  DATA STORAGE   │
+├─────────────────┤
+│ • MySQL         │ - IdentityIQ data
+│ • ChromaDB      │ - Schema embeddings
+│ • JSON files    │ - Training data
+│ • Logs          │ - Audit trail
+└─────────────────┘
+
+┌─────────────────┐
+│  LEARNING LOOP  │
+├─────────────────┤
+│ 1. User Query   │
+│ 2. Generate SQL │
+│ 3. Execute      │
+│ 4. Get Results  │
+│ 5. DBA Feedback │
+│ 6. Store        │
+│ 7. Improve      │
+└─────────────────┘
+
+┌─────────────────┐
+│  PERFORMANCE    │
+├─────────────────┤
+│ • Response Time │ - 10-30 seconds
+│ • Memory Usage  │ - 32GB available
+│ • Model Size    │ - Phi: 1.6GB
+│ • Accuracy      │ - Training dependent
+└─────────────────┘
+
+┌─────────────────┐
+│  SECURITY       │
+├─────────────────┤
+│ • SQL Injection │ - Prevention
+│ • Access Control│ - Authentication
+│ • Query Limits  │ - Resource protection
+│ • Audit Logs    │ - Compliance
+└─────────────────┘
