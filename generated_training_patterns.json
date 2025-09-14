@@ -1,0 +1,402 @@
+[
+  {
+    "natural_language": "Show me users who have groups in Apache DS",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groups_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Apache DS' \n  AND ie.name = 'groups'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with groups in Apache DS application",
+    "application": "Apache DS",
+    "entitlement_type": "groups",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682244",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific groups value in Apache DS",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groups_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Apache DS' \n  AND ie.name = 'groups'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific groups value in Apache DS",
+    "application": "Apache DS",
+    "entitlement_type": "groups",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682248",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have groups in Apache DS",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Apache DS' \n  AND ie.name = 'groups'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with groups in Apache DS",
+    "application": "Apache DS",
+    "entitlement_type": "groups",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682249",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have groups in Apache DS and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groups_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'groups'\n  AND a.name IN ('Apache DS', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for groups including Apache DS",
+    "application": "Apache DS",
+    "entitlement_type": "groups",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682250",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with groups in Apache DS and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groups_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'Apache DS' \n  AND ie.name = 'groups'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with groups in Apache DS",
+    "application": "Apache DS",
+    "entitlement_type": "groups",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682251",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have Profile in BAPS",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Profile'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with Profile in BAPS application",
+    "application": "BAPS",
+    "entitlement_type": "Profile",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682251",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific Profile value in BAPS",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Profile'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific Profile value in BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Profile",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682252",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have Profile in BAPS",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Profile'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with Profile in BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Profile",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682253",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have Profile in BAPS and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'Profile'\n  AND a.name IN ('BAPS', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for Profile including BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Profile",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682253",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with Profile in BAPS and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Profile'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with Profile in BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Profile",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682254",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have Role in BAPS",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Role_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Role'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with Role in BAPS application",
+    "application": "BAPS",
+    "entitlement_type": "Role",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682254",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific Role value in BAPS",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Role_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Role'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific Role value in BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Role",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682255",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have Role in BAPS",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Role'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with Role in BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Role",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682255",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have Role in BAPS and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Role_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'Role'\n  AND a.name IN ('BAPS', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for Role including BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Role",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682256",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with Role in BAPS and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Role_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'BAPS' \n  AND ie.name = 'Role'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with Role in BAPS",
+    "application": "BAPS",
+    "entitlement_type": "Role",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682257",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have usergroups in CMDB",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as usergroups_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'CMDB' \n  AND ie.name = 'usergroups'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with usergroups in CMDB application",
+    "application": "CMDB",
+    "entitlement_type": "usergroups",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682257",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific usergroups value in CMDB",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as usergroups_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'CMDB' \n  AND ie.name = 'usergroups'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific usergroups value in CMDB",
+    "application": "CMDB",
+    "entitlement_type": "usergroups",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682258",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have usergroups in CMDB",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'CMDB' \n  AND ie.name = 'usergroups'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with usergroups in CMDB",
+    "application": "CMDB",
+    "entitlement_type": "usergroups",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682258",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have usergroups in CMDB and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as usergroups_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'usergroups'\n  AND a.name IN ('CMDB', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for usergroups including CMDB",
+    "application": "CMDB",
+    "entitlement_type": "usergroups",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682259",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with usergroups in CMDB and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as usergroups_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'CMDB' \n  AND ie.name = 'usergroups'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with usergroups in CMDB",
+    "application": "CMDB",
+    "entitlement_type": "usergroups",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682260",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have groupmbr in Finance",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groupmbr_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Finance' \n  AND ie.name = 'groupmbr'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with groupmbr in Finance application",
+    "application": "Finance",
+    "entitlement_type": "groupmbr",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682260",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific groupmbr value in Finance",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groupmbr_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Finance' \n  AND ie.name = 'groupmbr'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific groupmbr value in Finance",
+    "application": "Finance",
+    "entitlement_type": "groupmbr",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682261",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have groupmbr in Finance",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Finance' \n  AND ie.name = 'groupmbr'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with groupmbr in Finance",
+    "application": "Finance",
+    "entitlement_type": "groupmbr",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682261",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have groupmbr in Finance and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groupmbr_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'groupmbr'\n  AND a.name IN ('Finance', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for groupmbr including Finance",
+    "application": "Finance",
+    "entitlement_type": "groupmbr",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682262",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with groupmbr in Finance and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as groupmbr_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'Finance' \n  AND ie.name = 'groupmbr'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with groupmbr in Finance",
+    "application": "Finance",
+    "entitlement_type": "groupmbr",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682262",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have capability in Trakk",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as capability_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Trakk' \n  AND ie.name = 'capability'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with capability in Trakk application",
+    "application": "Trakk",
+    "entitlement_type": "capability",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682263",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific capability value in Trakk",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as capability_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Trakk' \n  AND ie.name = 'capability'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific capability value in Trakk",
+    "application": "Trakk",
+    "entitlement_type": "capability",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682264",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have capability in Trakk",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'Trakk' \n  AND ie.name = 'capability'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with capability in Trakk",
+    "application": "Trakk",
+    "entitlement_type": "capability",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682264",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have capability in Trakk and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as capability_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'capability'\n  AND a.name IN ('Trakk', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for capability including Trakk",
+    "application": "Trakk",
+    "entitlement_type": "capability",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682265",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with capability in Trakk and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as capability_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'Trakk' \n  AND ie.name = 'capability'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with capability in Trakk",
+    "application": "Trakk",
+    "entitlement_type": "capability",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682265",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have Application in xSign",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Application_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Application'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with Application in xSign application",
+    "application": "xSign",
+    "entitlement_type": "Application",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682266",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific Application value in xSign",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Application_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Application'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific Application value in xSign",
+    "application": "xSign",
+    "entitlement_type": "Application",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682266",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have Application in xSign",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Application'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with Application in xSign",
+    "application": "xSign",
+    "entitlement_type": "Application",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682267",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have Application in xSign and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Application_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'Application'\n  AND a.name IN ('xSign', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for Application including xSign",
+    "application": "xSign",
+    "entitlement_type": "Application",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682267",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with Application in xSign and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Application_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Application'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with Application in xSign",
+    "application": "xSign",
+    "entitlement_type": "Application",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682268",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show me users who have Profile in xSign",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Profile'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Basic query to find users with Profile in xSign application",
+    "application": "xSign",
+    "entitlement_type": "Profile",
+    "pattern_type": "basic_entitlement",
+    "generated_at": "2025-09-15T01:40:35.682269",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Find users with specific Profile value in xSign",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Profile'\n  AND ie.value = 'SpecificValue'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query to find users with specific Profile value in xSign",
+    "application": "xSign",
+    "entitlement_type": "Profile",
+    "pattern_type": "specific_value",
+    "generated_at": "2025-09-15T01:40:35.682269",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "How many users have Profile in xSign",
+    "sql": "SELECT \n    COUNT(DISTINCT i.id) as user_count,\n    ie.name as entitlement_type,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Profile'\nGROUP BY ie.name, a.name;",
+    "explanation": "Count query for users with Profile in xSign",
+    "application": "xSign",
+    "entitlement_type": "Profile",
+    "pattern_type": "count_query",
+    "generated_at": "2025-09-15T01:40:35.682270",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users who have Profile in xSign and other applications",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nWHERE ie.name = 'Profile'\n  AND a.name IN ('xSign', 'OtherApp1', 'OtherApp2')\nORDER BY a.name, i.lastname, i.firstname;",
+    "explanation": "Multi-application query for Profile including xSign",
+    "application": "xSign",
+    "entitlement_type": "Profile",
+    "pattern_type": "multi_application",
+    "generated_at": "2025-09-15T01:40:35.682270",
+    "generated_by": "dynamic_training_generator"
+  },
+  {
+    "natural_language": "Show users with Profile in xSign and their managers",
+    "sql": "SELECT DISTINCT \n    i.firstname, \n    i.lastname, \n    i.displayname, \n    i.email,\n    ie.value as Profile_value,\n    m.displayname as manager_name,\n    a.name as application_name\nFROM spt_identity_entitlement ie\nJOIN spt_identity i ON ie.identity_id = i.id\nJOIN spt_application a ON ie.application = a.id\nLEFT JOIN spt_identity m ON i.manager = m.id\nWHERE a.name = 'xSign' \n  AND ie.name = 'Profile'\nORDER BY i.lastname, i.firstname;",
+    "explanation": "Query with manager information for users with Profile in xSign",
+    "application": "xSign",
+    "entitlement_type": "Profile",
+    "pattern_type": "with_manager",
+    "generated_at": "2025-09-15T01:40:35.682271",
+    "generated_by": "dynamic_training_generator"
+  }
+]

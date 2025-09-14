@@ -11,6 +11,7 @@ from loguru import logger
 from retriever import SchemaRetriever
 from prompt_templates_enhanced import EnhancedPromptTemplates
 from validator import SQLValidator, ValidationLevel
+from context_translator import context_translator
 from optimizer import SQLOptimizer, OptimizationLevel
 from adapters.llm_local import LocalLLMFactory
 from adapters.llm_openai import OpenAIAdapter
@@ -118,25 +119,36 @@ class SQLGenerator:
         }
         
         try:
-            # Step 1: Retrieve relevant schema
-            logger.info(f"Retrieving schema for query: {natural_language_query}")
-            retrieved_schema = self.retriever.retrieve_relevant_schema(natural_language_query)
+            # Step 1: Context-aware translation
+            logger.info(f"Translating query context: {natural_language_query}")
+            translation_result = context_translator.translate_query(natural_language_query)
+            translated_query = translation_result["translated_query"]
+            
+            # Step 2: Retrieve relevant schema using translated query
+            logger.info(f"Retrieving schema for translated query: {translated_query}")
+            retrieved_schema = self.retriever.retrieve_relevant_schema(translated_query)
             
             if not retrieved_schema.get("tables"):
                 result["warnings"].append("No relevant schema found for the query")
             
+            # Step 3: Retrieve relevant training examples
+            logger.info(f"Retrieving relevant training examples for: {translated_query}")
+            relevant_examples = self.retriever.retrieve_relevant_examples(translated_query, top_k=3)
+            
             # Format schema context for the prompt
             schema_context = self.retriever.format_schema_context(retrieved_schema)
             result["schema_context"] = schema_context
+            result["translation_result"] = translation_result
+            result["relevant_examples"] = relevant_examples
             
-            # Step 2: Generate SQL with retries
+            # Step 3: Generate SQL with retries
             sql_query = None
             for attempt in range(max_retries):
                 result["generation_metadata"]["attempts"] = attempt + 1
                 
                 try:
                     sql_query = self._generate_sql_with_llm(
-                        natural_language_query, schema_context, attempt
+                        natural_language_query, schema_context, attempt, translation_result, relevant_examples
                     )
                     
                     if sql_query and sql_query.strip():
@@ -220,7 +232,9 @@ class SQLGenerator:
         self, 
         natural_language_query: str, 
         schema_context: str, 
-        attempt: int = 0
+        attempt: int = 0,
+        translation_result: Optional[Dict[str, Any]] = None,
+        relevant_examples: Optional[List[Dict[str, Any]]] = None
     ) -> str:
         """Generate SQL using the LLM adapter with enhanced prompts."""
         
@@ -237,7 +251,9 @@ class SQLGenerator:
                 user_query=natural_language_query,
                 schema_context=schema_context,
                 include_synonyms=True,
-                include_examples=False,  # Disable examples for speed
+                include_examples=False,  # We'll use relevant examples instead
+                translation_result=translation_result,
+                relevant_examples=relevant_examples,
                 include_learning=False  # Disable learning for speed
             )
         

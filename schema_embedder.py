@@ -148,21 +148,21 @@ class SchemaEmbedder:
                 }
                 chunks.append((table_id, table_description, table_metadata))
                 
-        # Create column-level chunks
-        columns = table_info.get("columns", [])
-        for col_idx, col_info in enumerate(columns):
-            col_name = col_info.get("name", "")
-            col_description = self._format_column_description(col_info, table_name, schema_name)
-            col_id = f"column_{schema_name}_{table_name}_{col_name}_{col_idx}"
-            col_metadata = {
-                "type": "column",
-                "schema": schema_name,
-                "table": table_name,
-                "column": col_name,
-                "full_table_name": f"{schema_name}.{table_name}" if schema_name else table_name,
-                "data_type": str(col_info.get("type", ""))
-            }
-            chunks.append((col_id, col_description, col_metadata))
+                # Create column-level chunks for this table
+                columns = table_info.get("columns", [])
+                for col_idx, col_info in enumerate(columns):
+                    col_name = col_info.get("name", "")
+                    col_description = self._format_column_description(col_info, table_name, schema_name)
+                    col_id = f"column_{schema_name}_{table_name}_{col_name}_{col_idx}"
+                    col_metadata = {
+                        "type": "column",
+                        "schema": schema_name,
+                        "table": table_name,
+                        "column": col_name,
+                        "full_table_name": f"{schema_name}.{table_name}" if schema_name else table_name,
+                        "data_type": str(col_info.get("type", ""))
+                    }
+                    chunks.append((col_id, col_description, col_metadata))
         
         # Create relationship chunks
         relationships = schema_info.get("relationships", [])

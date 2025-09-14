@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional, Set
 import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
+from training_embedder import training_embedder
 from loguru import logger
 from config import settings
 
@@ -359,6 +360,39 @@ class SchemaRetriever:
         except Exception as e:
             logger.error(f"Error getting collection info: {e}")
             return {"error": str(e)}
+    
+    def retrieve_relevant_examples(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        """Retrieve relevant training examples for the query."""
+        try:
+            # Get training collection
+            training_collection = self.chroma_client.get_collection("training_examples")
+            
+            # Search for relevant examples
+            results = training_collection.query(
+                query_texts=[query],
+                n_results=top_k
+            )
+            
+            examples = []
+            if results['documents'] and results['documents'][0]:
+                for i, doc in enumerate(results['documents'][0]):
+                    metadata = results['metadatas'][0][i] if results['metadatas'] and results['metadatas'][0] else {}
+                    distance = results['distances'][0][i] if results['distances'] and results['distances'][0] else 0
+                    
+                    examples.append({
+                        "natural_language": metadata.get('natural_language', ''),
+                        "sql": metadata.get('sql', ''),
+                        "explanation": metadata.get('explanation', ''),
+                        "relevance_score": 1 - distance,  # Convert distance to similarity score
+                        "example_id": metadata.get('example_id', f'example_{i}')
+                    })
+            
+            logger.info(f"Retrieved {len(examples)} relevant training examples for query: {query[:50]}...")
+            return examples
+            
+        except Exception as e:
+            logger.error(f"Error retrieving training examples: {e}")
+            return []
 
 
 def main():

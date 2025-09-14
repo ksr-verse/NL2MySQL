@@ -54,6 +54,12 @@ class IIQTrainingData:
             "access rights": "spt_identity_entitlement",
             "access": "spt_identity_entitlement",
             "permission": "spt_identity_entitlement",
+            
+            # CRITICAL: Account-level entitlements (NOT IIQ groups/roles)
+            "group": "spt_identity_entitlement",  # When talking about account groups
+            "role": "spt_identity_entitlement",   # When talking about account roles
+            "capability": "spt_identity_entitlement",  # When talking about account capabilities
+            "responsibility": "spt_identity_entitlement",  # When talking about account responsibilities
            
             # Common fields
             "first name": "firstname",
@@ -67,7 +73,12 @@ class IIQTrainingData:
                 "description": "Universal mapping rules for all tables",
                 "rules": [
                     "Any column named 'identity_id' = maps to spt_identity.id (can always join to get user data)",
-                    "Any column named 'application' = maps to spt_application.id (can always join to get app details)"
+                    "Any column named 'application' = maps to spt_application.id (can always join to get app details)",
+                    "CRITICAL: When user mentions 'group' for an account = spt_identity_entitlement (NOT spt_group table)",
+                    "CRITICAL: When user mentions 'role' for an account = spt_identity_entitlement (NOT spt_role table)",
+                    "CRITICAL: When user mentions 'capability' for an account = spt_identity_entitlement",
+                    "CRITICAL: When user mentions 'permission' for an account = spt_identity_entitlement",
+                    "CRITICAL: Account-level entitlements are stored in spt_identity_entitlement table"
                 ]
             },
             "IDENTITIES": {
@@ -121,11 +132,15 @@ JOIN spt_application app ON l.application = app.id;
                 "primary_key": "id",
                 "important_columns": ["id", "identity_id", "application", "name", "value"],
                 "rules": [
-                    "Entitlements are in spt_identity_entitlement table",
+                    "CRITICAL: All account-level entitlements are in spt_identity_entitlement table",
                     "identity_id maps to spt_identity.id",
                     "application maps to spt_application.id",
-                    "name = entitlement type (capability, group, etc.)",
-                    "value = specific entitlement value"
+                    "name = entitlement type (capability, group, role, permission, etc.)",
+                    "value = specific entitlement value",
+                    "CRITICAL: When user says 'group in Finance' = spt_identity_entitlement where name='group' and application=Finance",
+                    "CRITICAL: When user says 'capability in Trakk' = spt_identity_entitlement where name='capability' and application=Trakk",
+                    "CRITICAL: When user says 'role in Workday' = spt_identity_entitlement where name='role' and application=Workday",
+                    "DO NOT use spt_group, spt_role, or spt_capability tables for account-level entitlements"
                 ],
                 "example_query": """
 SELECT spt_identity.firstname, spt_identity_entitlement.value, spt_application.name, spt_identity_entitlement.name 
@@ -158,6 +173,16 @@ JOIN spt_application ON spt_application.id = spt_identity_entitlement.applicatio
                 "natural_language": "Give me employees who have account in Trakk application, must have capability 'TimeSheetEnterAuthority' in Trakk",
                 "sql": "SELECT spt_identity.firstname, spt_identity_entitlement.value, spt_application.name, spt_identity_entitlement.name FROM spt_identity_entitlement JOIN spt_identity ON spt_identity_entitlement.identity_id = spt_identity.id JOIN spt_application ON spt_application.id = spt_identity_entitlement.application WHERE spt_application.name = 'Trakk' AND spt_identity_entitlement.name = 'capability' AND spt_identity_entitlement.value = 'TimeSheetEnterAuthority';",
                 "explanation": "Complex query combining multiple entities with specific requirements"
+            },
+            {
+                "natural_language": "give me identities who have accounts on workday, Trakk, Finance and Apache DS. User must have PayrollAnalysis group in Finance application",
+                "sql": "SELECT DISTINCT i.firstname, i.lastname, i.display_name, i.email, m.display_name AS manager_name FROM spt_identity i LEFT JOIN spt_identity m ON i.manager = m.id JOIN spt_link l1 ON i.id = l1.identity_id JOIN spt_application app1 ON l1.application = app1.id JOIN spt_link l2 ON i.id = l2.identity_id JOIN spt_application app2 ON l2.application = app2.id JOIN spt_link l3 ON i.id = l3.identity_id JOIN spt_application app3 ON l3.application = app3.id JOIN spt_link l4 ON i.id = l4.identity_id JOIN spt_application app4 ON l4.application = app4.id JOIN spt_identity_entitlement ie ON i.id = ie.identity_id JOIN spt_application app_finance ON ie.application = app_finance.id WHERE app1.name = 'Workday' AND app2.name = 'Trakk' AND app3.name = 'Finance' AND app4.name = 'Apache DS' AND app_finance.name = 'Finance' AND ie.name = 'group' AND ie.value = 'PayrollAnalysis';",
+                "explanation": "Complex multi-account query with specific group entitlement requirement"
+            },
+            {
+                "natural_language": "Give me identities who have accounts on Workday, Trakk, Finance and Apache DS. User must have PayrollAnalysis group in Finance application",
+                "sql": "SELECT DISTINCT spt_identity.firstname, spt_identity.lastname, spt_identity.display_name, spt_identity.email FROM spt_identity JOIN spt_link l1 ON spt_identity.id = l1.identity_id JOIN spt_application app1 ON l1.application = app1.id AND app1.name = 'Workday' JOIN spt_link l2 ON spt_identity.id = l2.identity_id JOIN spt_application app2 ON l2.application = app2.id AND app2.name = 'Trakk' JOIN spt_link l3 ON spt_identity.id = l3.identity_id JOIN spt_application app3 ON l3.application = app3.id AND app3.name = 'Finance' JOIN spt_link l4 ON spt_identity.id = l4.identity_id JOIN spt_application app4 ON l4.application = app4.id AND app4.name = 'Apache DS' JOIN spt_identity_entitlement ie ON spt_identity.id = ie.identity_id JOIN spt_application app5 ON ie.application = app5.id WHERE app5.name = 'Finance' AND ie.name = 'group' AND ie.value = 'PayrollAnalysis';",
+                "explanation": "Complex query for identities with multiple accounts and specific group entitlement in Finance"
             }
         ]
     

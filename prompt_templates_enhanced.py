@@ -75,7 +75,9 @@ RESPONSE FORMAT: Return ONLY the MySQL SQL query without explanation"""
                             schema_context: str,
                             include_synonyms: bool = True,
                             include_examples: bool = True,
-                            include_learning: bool = True) -> str:
+                            include_learning: bool = True,
+                            translation_result: Optional[Dict[str, Any]] = None,
+                            relevant_examples: Optional[List[Dict[str, Any]]] = None) -> str:
         """Build enhanced prompt with synonyms, examples, and learning data."""
         
         prompt_parts = []
@@ -88,13 +90,48 @@ RESPONSE FORMAT: Return ONLY the MySQL SQL query without explanation"""
             synonyms_text = self._get_synonyms_text()
             prompt_parts.append(synonyms_text)
         
-        # 3. Schema context
+        # 3. Translation context (if available)
+        if translation_result and translation_result.get("translation_applied"):
+            translation_context = f"""
+CONTEXT TRANSLATION APPLIED:
+Original Query: {translation_result['original_query']}
+Translated Query: {translation_result['translated_query']}
+Context: {'Account-level entitlements' if translation_result.get('has_account_context') else 'General query'}
+Entities Found: {translation_result.get('entities', {})}
+
+IMPORTANT: The query has been translated to use correct IIQ terminology. Use the translated context to understand the intent.
+"""
+            prompt_parts.append(translation_context)
+        
+        # 4. Schema context
         prompt_parts.append(f"DATABASE SCHEMA:\n{schema_context}")
         
-        # 4. Relevant examples from training data
-        if include_examples:
+        # 5. Relevant examples from vector search
+        if relevant_examples and len(relevant_examples) > 0:
+            examples_text = "🎯 RELEVANT TRAINING EXAMPLES - FOLLOW THESE EXACTLY:\n"
+            for i, example in enumerate(relevant_examples, 1):
+                examples_text += f"\n{i}. Human: {example['natural_language']}\n"
+                examples_text += f"   SQL: {example['sql']}\n"
+                if example.get('explanation'):
+                    examples_text += f"   Note: {example['explanation']}\n"
+                examples_text += f"   Relevance: {example.get('relevance_score', 0):.2f}\n"
+            
+            # Add specific directive for entitlements
+            examples_text += f"""
+
+🚨 CRITICAL ENTITLEMENT RULES - MUST FOLLOW:
+- For ANY account-level group/role/capability/permission = USE spt_identity_entitlement table
+- NEVER use spt_group, spt_role, spt_capability for account-level entitlements
+- ALWAYS join: spt_identity_entitlement.identity_id = spt_identity.id
+- ALWAYS join: spt_identity_entitlement.application = spt_application.id
+- For groups: WHERE spt_identity_entitlement.name = 'group' AND spt_identity_entitlement.value = 'GroupName'
+- For capabilities: WHERE spt_identity_entitlement.name = 'capability' AND spt_identity_entitlement.value = 'CapabilityName'
+"""
+            prompt_parts.append(examples_text)
+        elif include_examples:
+            # Fallback to all examples if no relevant examples found
             examples_text = "IIQ TRAINING EXAMPLES:\n"
-            for i, example in enumerate(self.training_data.examples[:3], 1):
+            for i, example in enumerate(self.training_data.examples[:2], 1):
                 examples_text += f"\n{i}. Human: {example['natural_language']}\n"
                 examples_text += f"   SQL: {example['sql']}\n"
                 if example.get('explanation'):
@@ -104,8 +141,44 @@ RESPONSE FORMAT: Return ONLY the MySQL SQL query without explanation"""
         # 5. User query
         prompt_parts.append(f"USER QUERY: {user_query}")
         
-        # 6. Final instruction
-        prompt_parts.append("Generate an optimized MySQL query:")
+        # 6. Template-based approach for complex queries
+        if "group" in user_query.lower() and "application" in user_query.lower():
+            template = """
+🚨 TEMPLATE FOR MULTI-ACCOUNT + GROUP ENTITLEMENT QUERIES:
+Use this EXACT pattern for queries with multiple accounts and group entitlements:
+
+SELECT DISTINCT i.firstname, i.lastname, i.display_name, i.email, m.display_name AS manager_name
+FROM spt_identity i
+LEFT JOIN spt_identity m ON i.manager = m.id
+JOIN spt_link l1 ON i.id = l1.identity_id
+JOIN spt_application app1 ON l1.application = app1.id AND app1.name = 'Application1'
+JOIN spt_link l2 ON i.id = l2.identity_id  
+JOIN spt_application app2 ON l2.application = app2.id AND app2.name = 'Application2'
+JOIN spt_link l3 ON i.id = l3.identity_id
+JOIN spt_application app3 ON l3.application = app3.id AND app3.name = 'Application3'
+JOIN spt_link l4 ON i.id = l4.identity_id
+JOIN spt_application app4 ON l4.application = app4.id AND app4.name = 'Application4'
+JOIN spt_identity_entitlement ie ON i.id = ie.identity_id
+JOIN spt_application app_finance ON ie.application = app_finance.id
+WHERE app_finance.name = 'Finance' AND ie.name = 'group' AND ie.value = 'PayrollAnalysis';
+
+REPLACE Application1, Application2, Application3, Application4 with the actual application names from the query.
+"""
+            prompt_parts.append(template)
+        
+        # 7. Final instruction
+        prompt_parts.append("""
+🚨 FINAL INSTRUCTIONS - CRITICAL:
+1. If the query mentions account-level groups/roles/capabilities/permissions, you MUST use spt_identity_entitlement table
+2. NEVER use spt_group, spt_role, spt_capability tables for account-level entitlements
+3. Follow the exact pattern from the training examples above
+4. Use proper JOIN syntax: spt_identity_entitlement.identity_id = spt_identity.id
+5. Use proper JOIN syntax: spt_identity_entitlement.application = spt_application.id
+6. For groups: WHERE spt_identity_entitlement.name = 'group' AND spt_identity_entitlement.value = 'GroupName'
+7. For capabilities: WHERE spt_identity_entitlement.name = 'capability' AND spt_identity_entitlement.value = 'CapabilityName'
+
+Generate an optimized MySQL query:
+""")
         
         return "\n\n".join(prompt_parts)
     

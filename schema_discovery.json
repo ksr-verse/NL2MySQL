@@ -1,0 +1,169 @@
+{
+  "last_run": "2025-09-15T01:40:35.679756",
+  "applications": {
+    "Apache DS": {
+      "id": "c0a81f6597f31dc48197f5497a4e054c",
+      "name": "Apache DS",
+      "description": "",
+      "created": "1752166922831",
+      "modified": "1752328175417",
+      "entitlement_types": [
+        "groups"
+      ],
+      "entitlement_details": {
+        "groups": {
+          "count": 2,
+          "sample_value": "cn=Administrators,ou=groups,ou=system",
+          "description": "groups entitlement"
+        }
+      }
+    },
+    "BAPS": {
+      "id": "c0a81f6597f31dc48197f50a3659047d",
+      "name": "BAPS",
+      "description": "",
+      "created": "1752162776666",
+      "modified": "1754156439732",
+      "entitlement_types": [
+        "Profile",
+        "Role"
+      ],
+      "entitlement_details": {
+        "Profile": {
+          "count": 22,
+          "sample_value": "Restricted",
+          "description": "Profile entitlement"
+        },
+        "Role": {
+          "count": 22,
+          "sample_value": "System Administrator",
+          "description": "User role assignment"
+        }
+      }
+    },
+    "CMDB": {
+      "id": "c0a81f6597f31dc48197fd6a2fad0b80",
+      "name": "CMDB",
+      "description": "",
+      "created": "1752303284141",
+      "modified": "1752328176931",
+      "entitlement_types": [
+        "usergroups"
+      ],
+      "entitlement_details": {
+        "usergroups": {
+          "count": 6,
+          "sample_value": "Manager",
+          "description": "usergroups entitlement"
+        }
+      }
+    },
+    "Finance": {
+      "id": "c0a81f6597f31dc48197f310141b0009",
+      "name": "Finance",
+      "description": "",
+      "created": "1752129606683",
+      "modified": "1752328171510",
+      "entitlement_types": [
+        "groupmbr"
+      ],
+      "entitlement_details": {
+        "groupmbr": {
+          "count": 82,
+          "sample_value": "AcctsPayable",
+          "description": "groupmbr entitlement"
+        }
+      }
+    },
+    "OpenDJ": {
+      "id": "c0a81f65984611bf81984748eea000af",
+      "name": "OpenDJ",
+      "description": "",
+      "created": "1753542618786",
+      "modified": "1753547000605",
+      "entitlement_types": []
+    },
+    "Trakk": {
+      "id": "c0a81f6597f31dc48197f3ac230d01b4",
+      "name": "Trakk",
+      "description": "",
+      "created": "1752139834125",
+      "modified": "1752378726661",
+      "entitlement_types": [
+        "capability"
+      ],
+      "entitlement_details": {
+        "capability": {
+          "count": 299,
+          "sample_value": "ApproverAuthority",
+          "description": "Application capability or permission"
+        }
+      }
+    },
+    "Workday": {
+      "id": "c0a81f6597ee10488197efda1f840157",
+      "name": "Workday",
+      "description": "",
+      "created": "1752075739012",
+      "modified": "1752328171149",
+      "entitlement_types": []
+    },
+    "xSign": {
+      "id": "c0a81f6597f31dc48197f4d1d6bb03cc",
+      "name": "xSign",
+      "description": "",
+      "created": "1752159082171",
+      "modified": "1752328173353",
+      "entitlement_types": [
+        "Application",
+        "Profile"
+      ],
+      "entitlement_details": {
+        "Application": {
+          "count": 22,
+          "sample_value": "coAdmin",
+          "description": "Application entitlement"
+        },
+        "Profile": {
+          "count": 22,
+          "sample_value": "Restricted",
+          "description": "Profile entitlement"
+        }
+      }
+    }
+  },
+  "entitlement_types": {
+    "Apache DS": [
+      "groups"
+    ],
+    "BAPS": [
+      "Profile",
+      "Role"
+    ],
+    "CMDB": [
+      "usergroups"
+    ],
+    "Finance": [
+      "groupmbr"
+    ],
+    "OpenDJ": [],
+    "Trakk": [
+      "capability"
+    ],
+    "Workday": [],
+    "xSign": [
+      "Application",
+      "Profile"
+    ]
+  },
+  "new_discoveries": {
+    "new_applications": [],
+    "new_entitlement_types": [],
+    "modified_applications": []
+  },
+  "summary": {
+    "total_applications": 8,
+    "new_applications": 0,
+    "new_entitlement_types": 0
+  }
+}
