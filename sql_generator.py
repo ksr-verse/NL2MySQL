@@ -61,11 +61,11 @@ class SQLGenerator:
             # Use Groq API with Llama-3.1-8b-instant - ultra-fast and reliable
             adapter = GroqAdapter(
                 api_key=groq_api_key,
-                model_name="llama-3.1-8b-instant"  # Force working model
+                model_name="openai/gpt-oss-20b"  # Match Groq UI model
             )
             
             if adapter.is_available():
-                logger.info("Using Groq adapter ONLY (ultra-fast Llama-3.1-8b-instant)")
+                logger.info("Using Groq adapter ONLY (openai/gpt-oss-20b)")
                 logger.info("Local models disabled - Groq only mode")
                 return adapter
             else:

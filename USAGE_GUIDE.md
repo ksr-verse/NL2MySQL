@@ -381,7 +381,7 @@ Create a `.env` file in the project root with the following variables:
 ```bash
 # LLM Configuration
 LLM_GROQ_API_KEY=your_groq_api_key_here
-LLM_GROQ_MODEL=llama-3.1-8b-instant
+LLM_GROQ_MODEL=openai/gpt-oss-20b
 
 # Database Configuration
 DB_CONNECTION_STRING=mysql+pymysql://username:password@host:port/database

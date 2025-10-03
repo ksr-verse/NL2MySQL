@@ -126,11 +126,10 @@ class GroqAdapter(BaseLLMAdapter):
             payload = {
                 "messages": messages,
                 "model": self.model_name,
-                "max_tokens": 300,  # Sufficient for most SQL queries
+                "max_tokens": 500,  # Allow for longer SQL queries
                 "temperature": 0.1,  # Low temperature for consistent SQL
                 "top_p": 0.9,
-                "stream": False,
-                "stop": ["Human:", "Assistant:", "\n\n---"]
+                "stream": False
             }
             
             logger.info(f"GROQ: Sending request to {self.chat_url}")
@@ -217,14 +216,11 @@ class GroqAdapter(BaseLLMAdapter):
     def _format_prompt_for_groq(self, prompt: str) -> list:
         """Format the prompt for Groq's chat format - pass through the Vector DB prompt as-is."""
         
-        # Simple system message - let the Vector DB prompt handle everything
-        system_message = """You are a MySQL database expert. Generate clean SQL queries based on the provided schema and examples."""
-        
-        # Pass the complete prompt from Vector DB as the user message
+        # Pass the complete prompt from Vector DB as a single user message
+        # This matches exactly what works in the Groq UI
         user_message = prompt
         
         return [
-            {"role": "system", "content": system_message},
             {"role": "user", "content": user_message}
         ]
     
