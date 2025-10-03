@@ -16,9 +16,10 @@ import sys
 
 from sql_generator import SQLGenerator
 from validator import ValidationLevel
-from optimizer import OptimizationLevel
+# Removed optimizer import - using Groq only mode
 from adapters.db_mysql import MySQLAdapter
 from config import settings
+# Removed IntelligentQueryGenerator - using only SQLGenerator with Groq
 
 # Configure logging
 logger.remove()
@@ -45,6 +46,7 @@ app.add_middleware(
 
 # Global instances
 sql_generator: Optional[SQLGenerator] = None
+# Removed intelligent_generator - using only sql_generator with Groq
 db_adapter: Optional[MySQLAdapter] = None
 
 
@@ -54,7 +56,7 @@ class QueryRequest(BaseModel):
     question: str = Field(..., description="Natural language question", min_length=1, max_length=1000)
     include_explanation: bool = Field(default=False, description="Include explanation of generated SQL")
     validation_level: str = Field(default="standard", description="Validation level: basic, standard, strict")
-    optimization_level: str = Field(default="standard", description="Optimization level: basic, standard, aggressive")
+    # Removed optimization_level - using Groq only mode
     max_retries: int = Field(default=3, description="Maximum retry attempts", ge=1, le=5)
 
 
@@ -112,12 +114,15 @@ async def startup_event():
     try:
         logger.info("Starting NL2SQL service...")
         
-        # Initialize SQL generator
+        # Initialize SQL generator (legacy)
         validation_level = ValidationLevel.STANDARD
-        optimization_level = OptimizationLevel.STANDARD
+        # Removed optimization_level - using Groq only mode
         
-        sql_generator = SQLGenerator(validation_level, optimization_level)
+        sql_generator = SQLGenerator(validation_level)
         logger.info("SQL generator initialized")
+        
+        # Initialize intelligent query generator (new system)
+        # Removed intelligent query generator - using only SQLGenerator with Groq
         
         # Initialize database adapter (optional)
         try:
@@ -160,6 +165,9 @@ def get_sql_generator() -> SQLGenerator:
     if sql_generator is None:
         raise HTTPException(status_code=503, detail="SQL generator not initialized")
     return sql_generator
+
+
+# Removed get_intelligent_generator - using only SQLGenerator with Groq
 
 
 def get_db_adapter() -> MySQLAdapter:
@@ -210,25 +218,32 @@ async def generate_sql(
     request: QueryRequest,
     generator: SQLGenerator = Depends(get_sql_generator)
 ):
-    """Generate SQL from natural language query."""
+    """Generate SQL from natural language query using Groq AI."""
     start_time = time.time()
     
+    logger.info(f"API: Received query request")
+    logger.info(f"API: Query: '{request.question}'")
+    logger.info(f"API: Parameters - include_explanation: {request.include_explanation}, validation: {request.validation_level}")
+    
     try:
-        logger.info(f"Generating SQL for query: {request.question}")
+        logger.info(f"API: Parsing validation level")
         
         # Parse validation and optimization levels
         try:
             validation_level = ValidationLevel(request.validation_level.lower())
-            optimization_level = OptimizationLevel(request.optimization_level.lower())
+            # Removed optimization_level - using Groq only mode
+            logger.info(f"API: Levels parsed - validation: {validation_level}")
         except ValueError as e:
+            logger.error(f"API: Invalid level parameter: {e}")
             raise HTTPException(status_code=400, detail=f"Invalid level parameter: {e}")
         
         # Update generator levels if different
         if generator.validator.validation_level != validation_level:
+            logger.info(f"API: Updating validation level to {validation_level}")
             generator.validator.validation_level = validation_level
-        if generator.optimizer.optimization_level != optimization_level:
-            generator.optimizer.optimization_level = optimization_level
+        # Removed optimization level updates - using Groq only mode
         
+        logger.info(f"API: Calling SQLGenerator.generate_sql()")
         # Generate SQL
         result = generator.generate_sql(
             natural_language_query=request.question,
@@ -239,6 +254,13 @@ async def generate_sql(
         )
         
         execution_time = int((time.time() - start_time) * 1000)
+        
+        logger.info(f"API: SQL generation completed in {execution_time}ms")
+        logger.info(f"API: Success: {result['success']}")
+        logger.info(f"API: Generated SQL: {result.get('sql_query', 'N/A')[:100]}...")
+        logger.info(f"API: Explanation length: {len(result.get('explanation', ''))}")
+        logger.info(f"API: Warnings: {len(result.get('warnings', []))}")
+        logger.info(f"API: Errors: {len(result.get('errors', []))}")
         
         response = QueryResponse(
             success=result["success"],
@@ -253,7 +275,7 @@ async def generate_sql(
             metadata=result.get("generation_metadata", {})
         )
         
-        logger.info(f"SQL generation {'successful' if result['success'] else 'failed'} in {execution_time}ms")
+        logger.info(f"API: Sending response back to frontend")
         return response
         
     except HTTPException:
@@ -268,6 +290,9 @@ async def generate_sql(
             execution_time_ms=execution_time,
             errors=[str(e)]
         )
+
+
+# Removed confusing /intelligent-query endpoint - keeping only /query for simplicity
 
 
 @app.post("/execute", response_model=ExecuteResponse)
@@ -316,6 +341,9 @@ async def execute_sql(
             execution_time_ms=execution_time,
             errors=[str(e)]
         )
+
+
+# Removed /query-simple endpoint - keeping only /query for simplicity
 
 
 

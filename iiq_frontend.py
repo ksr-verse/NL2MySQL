@@ -5,7 +5,19 @@ import streamlit as st
 import requests
 import json
 import time
+import logging
 from datetime import datetime
+
+# Configure logging for frontend
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | FRONTEND | %(message)s',
+    handlers=[
+        logging.FileHandler('frontend.log'),
+        logging.StreamHandler()
+    ]
+)
+frontend_logger = logging.getLogger(__name__)
 from typing import Dict, Any, List, Optional
 import pandas as pd
 
@@ -75,11 +87,29 @@ def check_api_connection() -> bool:
 
 def call_api_endpoint(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """Call API endpoint and return response."""
+    frontend_logger.info(f"🚀 UI: Starting API call to {endpoint}")
+    frontend_logger.info(f"📤 UI: Request data: {data}")
+    
     try:
+        start_time = time.time()
         response = requests.post(f"{API_BASE_URL}{endpoint}", json=data, timeout=30)
+        response_time = time.time() - start_time
+        
+        frontend_logger.info(f"✅ UI: API response received in {response_time:.2f}s")
+        frontend_logger.info(f"📊 UI: Response status: {response.status_code}")
+        
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        
+        frontend_logger.info(f"📝 UI: Response data keys: {list(result.keys())}")
+        if 'sql' in result:
+            frontend_logger.info(f"🔍 UI: Generated SQL: {result.get('sql', 'N/A')[:100]}...")
+        if 'confidence' in result:
+            frontend_logger.info(f"🎯 UI: Query confidence: {result.get('confidence', 'N/A')}")
+        
+        return result
     except requests.exceptions.RequestException as e:
+        frontend_logger.error(f"❌ UI: API request failed: {str(e)}")
         st.error(f"API Error: {str(e)}")
         return {"error": str(e)}
 
@@ -145,7 +175,11 @@ def main():
         
         with col1:
             if st.button("🚀 Generate SQL", type="primary"):
+                frontend_logger.info(f"🎯 UI: User clicked 'Generate SQL' button")
                 if user_query:
+                    frontend_logger.info(f"📝 UI: User query: '{user_query}'")
+                    frontend_logger.info(f"⚙️ UI: Query parameters - max_rows: {max_rows}, include_explanation: {include_explanation}")
+                    
                     with st.spinner("Generating SQL..."):
                         # Call API
                         data = {
@@ -154,16 +188,21 @@ def main():
                             "include_explanation": include_explanation
                         }
                         
+                        frontend_logger.info(f"📤 UI: Sending request to /query endpoint")
                         response = call_api_endpoint("/query", data)
                         
                         if "error" not in response:
+                            frontend_logger.info(f"✅ UI: Query generation successful")
+                            frontend_logger.info(f"💾 UI: Storing results in session state")
                             st.session_state['last_query'] = user_query
                             st.session_state['last_sql'] = response.get('sql', '')
                             st.session_state['last_explanation'] = response.get('explanation', '')
                             st.session_state['last_response'] = response
                         else:
+                            frontend_logger.error(f"❌ UI: Query generation failed: {response['error']}")
                             st.error(f"Error: {response['error']}")
                 else:
+                    frontend_logger.warning(f"⚠️ UI: User clicked generate but no query provided")
                     st.warning("Please enter a query first.")
         
         with col2:

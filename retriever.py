@@ -9,9 +9,26 @@ from typing import List, Dict, Any, Optional, Set
 import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
-from training_embedder import training_embedder
+# Training embedder no longer needed - using new Vector DB approach
 from loguru import logger
 from config import settings
+# Basic synonyms mapping for query preprocessing
+SYNONYMS = {
+    "users": "spt_identity",
+    "user": "spt_identity", 
+    "employees": "spt_identity",
+    "people": "spt_identity",
+    "identities": "spt_identity",
+    "accounts": "spt_link",
+    "account": "spt_link",
+    "user accounts": "spt_link",
+    "identity accounts": "spt_link",
+    "links": "spt_link",
+    "applications": "spt_application",
+    "application": "spt_application",
+    "apps": "spt_application",
+    "systems": "spt_application"
+}
 
 
 class SchemaRetriever:
@@ -28,13 +45,38 @@ class SchemaRetriever:
         )
         
         try:
-            self.collection = self.chroma_client.get_collection(
+            # Connect to schema collection
+            self.schema_collection = self.chroma_client.get_collection(
                 name=settings.vector_db.collection_name
             )
-            logger.info(f"Connected to collection: {settings.vector_db.collection_name}")
+            logger.info(f"Connected to schema collection: {settings.vector_db.collection_name}")
+            
+            # Connect to training examples collection
+            self.training_collection = self.chroma_client.get_collection("training_examples")
+            logger.info(f"Connected to training collection: training_examples")
+            
         except Exception as e:
-            logger.error(f"Failed to connect to collection: {e}")
-            raise RuntimeError(f"Schema collection not found. Please run schema embedding first.")
+            logger.error(f"Failed to connect to collections: {e}")
+            raise RuntimeError(f"Collections not found. Please run schema and training embedding first.")
+    
+    def _preprocess_query_with_synonyms(self, query: str) -> str:
+        """Preprocess query by replacing synonyms with database terms."""
+        enhanced_query = query.lower()
+        
+        # Apply synonym mappings
+        for human_term, db_term in SYNONYMS.items():
+            if human_term.lower() in enhanced_query:
+                enhanced_query = enhanced_query.replace(human_term.lower(), db_term)
+                logger.info(f"RETRIEVER: Replaced '{human_term}' with '{db_term}'")
+        
+        # If synonyms were applied, log the enhancement
+        if enhanced_query != query.lower():
+            logger.info(f"RETRIEVER: Original query: '{query}'")
+            logger.info(f"RETRIEVER: Enhanced query: '{enhanced_query}'")
+        else:
+            logger.info(f"RETRIEVER: No synonyms found in query: '{query}'")
+        
+        return enhanced_query
     
     def retrieve_relevant_schema(
         self, 
@@ -55,47 +97,92 @@ class SchemaRetriever:
         Returns:
             Dictionary containing retrieved schema information
         """
+        logger.info(f"RETRIEVER: Starting schema retrieval")
+        logger.info(f"RETRIEVER: Original query: '{query}'")
+        logger.info(f"RETRIEVER: Parameters - top_k: {top_k}, include_relationships: {include_relationships}, filter_types: {filter_types}")
+        
+        # Preprocess query with synonyms
+        enhanced_query = self._preprocess_query_with_synonyms(query)
+        
         top_k = top_k or settings.vector_db.top_k
+        # Increase top_k to ensure we get table chunks (not just column chunks)
+        top_k = max(top_k, 20)  # Ensure we get at least 20 results to find table chunks
+        logger.info(f"RETRIEVER: Using top_k: {top_k}")
         
         try:
             # Build where clause for filtering
             where_clause = None
             if filter_types:
                 where_clause = {"type": {"$in": filter_types}}
+                logger.info(f"RETRIEVER: Using filter: {where_clause}")
+            else:
+                logger.info(f"RETRIEVER: No filters applied")
             
-            # Query the collection
-            results = self.collection.query(
-                query_texts=[query],
+            logger.info(f"RETRIEVER: Querying schema collection")
+            # Query the schema collection with enhanced query
+            schema_results = self.schema_collection.query(
+                query_texts=[enhanced_query],
                 n_results=top_k,
                 where=where_clause
             )
             
-            if not results or not results.get("documents") or not results["documents"][0]:
-                logger.warning(f"No relevant schema found for query: {query}")
-                return {"tables": {}, "relationships": [], "query": query, "retrieved_chunks": []}
+            logger.info(f"RETRIEVER: Querying training examples collection")
+            # Query the training examples collection with enhanced query
+            training_results = self.training_collection.query(
+                query_texts=[enhanced_query],
+                n_results=3,  # Get top 3 most relevant training examples
+                where=None  # No filters for training examples
+            )
             
-            # Process results
-            documents = results["documents"][0]
-            metadatas = results["metadatas"][0]
-            distances = results["distances"][0]
-            ids = results["ids"][0]
+            # Combine results
+            results = schema_results
+            
+            logger.info(f"RETRIEVER: ChromaDB query completed")
+            logger.info(f"RETRIEVER: Results structure: {list(results.keys()) if results else 'None'}")
+            
+            if not results or not results.get("documents") or not results["documents"][0]:
+                logger.warning(f"RETRIEVER: No relevant schema found for query: {query}")
+                return {"tables": {}, "relationships": [], "query": query, "retrieved_chunks": [], "schema_context": ""}
+            
+            # Process schema results
+            schema_documents = results["documents"][0] if results.get("documents") and results["documents"][0] else []
+            schema_metadatas = results["metadatas"][0] if results.get("metadatas") and results["metadatas"][0] else []
+            schema_distances = results["distances"][0] if results.get("distances") and results["distances"][0] else []
+            schema_ids = results["ids"][0] if results.get("ids") and results["ids"][0] else []
+            
+            # Process training results
+            training_documents = training_results["documents"][0] if training_results.get("documents") and training_results["documents"][0] else []
+            training_metadatas = training_results["metadatas"][0] if training_results.get("metadatas") and training_results["metadatas"][0] else []
+            training_distances = training_results["distances"][0] if training_results.get("distances") and training_results["distances"][0] else []
+            training_ids = training_results["ids"][0] if training_results.get("ids") and training_results["ids"][0] else []
+            
+            logger.info(f"RETRIEVER: Retrieved {len(schema_documents)} schema chunks, {len(training_documents)} training examples")
+            logger.info(f"RETRIEVER: Schema document lengths: {[len(doc) for doc in schema_documents[:3]]}")
+            logger.info(f"RETRIEVER: Schema metadata types: {[meta.get('type', 'unknown') for meta in schema_metadatas[:3]]}")
+            logger.info(f"RETRIEVER: Schema distance scores: {schema_distances[:3]}")
+            logger.info(f"RETRIEVER: Training distance scores: {training_distances[:3]}")
             
             # Organize results by type
+            logger.info(f"RETRIEVER: Processing {len(schema_documents)} schema chunks and {len(training_documents)} training examples")
             tables = {}
             relationships = []
             retrieved_chunks = []
+            training_examples = []
             
-            for i, (doc, meta, distance, chunk_id) in enumerate(zip(documents, metadatas, distances, ids)):
+            # Process schema chunks
+            for i, (doc, meta, distance, chunk_id) in enumerate(zip(schema_documents, schema_metadatas, schema_distances, schema_ids)):
                 chunk_info = {
                     "id": chunk_id,
                     "content": doc,
                     "metadata": meta,
                     "similarity_score": 1 - distance,  # Convert distance to similarity
-                    "rank": i + 1
+                    "rank": i + 1,
+                    "source": "schema"
                 }
                 retrieved_chunks.append(chunk_info)
                 
                 chunk_type = meta.get("type", "unknown")
+                logger.info(f"RETRIEVER: Processing schema chunk {i+1}/{len(schema_documents)} - Type: {chunk_type}, Score: {chunk_info['similarity_score']:.3f}")
                 
                 if chunk_type == "table":
                     schema_name = meta.get("schema", "")
@@ -151,16 +238,92 @@ class SchemaRetriever:
             for table_info in tables.values():
                 table_info["columns"].sort(key=lambda x: x["similarity_score"], reverse=True)
             
+            # Process training examples
+            for i, (doc, meta, distance, chunk_id) in enumerate(zip(training_documents, training_metadatas, training_distances, training_ids)):
+                training_info = {
+                    "id": chunk_id,
+                    "content": doc,
+                    "metadata": meta,
+                    "similarity_score": 1 - distance,
+                    "rank": i + 1,
+                    "source": "training"
+                }
+                training_examples.append(training_info)
+                logger.info(f"RETRIEVER: Processing training example {i+1}/{len(training_documents)} - Score: {training_info['similarity_score']:.3f}")
+            
             # Sort relationships by similarity score
             relationships.sort(key=lambda x: x["similarity_score"], reverse=True)
             
-            logger.info(f"Retrieved {len(tables)} tables, {len(relationships)} relationships for query: '{query}'")
+            # Sort training examples by similarity score
+            training_examples.sort(key=lambda x: x["similarity_score"], reverse=True)
+            
+            # Generate schema context for LLM
+            schema_context = self._build_schema_context(tables, relationships, retrieved_chunks)
+            
+            # Generate training context for LLM
+            training_context = self._build_training_context(training_examples)
+            
+            # Hybrid approach: Add core tables if they're mentioned in the enhanced query
+            core_tables_to_check = ["spt_identity", "spt_link", "spt_application"]
+            enhanced_query_lower = enhanced_query.lower()
+            
+            for core_table in core_tables_to_check:
+                if core_table in enhanced_query_lower:
+                    full_table_name = f"identityiq.{core_table}"
+                    if full_table_name not in tables:
+                        logger.info(f"RETRIEVER: Adding core table {core_table} based on enhanced query match")
+                        # Try to find the table chunk in ChromaDB
+                        try:
+                            # Simple query without complex where clause
+                            table_results = self.schema_collection.query(
+                                query_texts=[core_table],
+                                n_results=5
+                            )
+                            
+                            if table_results['documents'] and len(table_results['documents'][0]) > 0:
+                                table_doc = table_results['documents'][0][0]
+                                table_meta = table_results['metadatas'][0][0]
+                                table_distance = table_results['distances'][0][0]
+                                table_similarity = 1 - table_distance
+                                
+                                tables[full_table_name] = {
+                                    "schema": "identityiq",
+                                    "table": core_table,
+                                    "full_name": full_table_name,
+                                    "table_info": table_doc,
+                                    "columns": [],
+                                    "similarity_score": table_similarity
+                                }
+                                logger.info(f"RETRIEVER: Found and added {core_table} table (score: {table_similarity:.3f})")
+                            else:
+                                logger.warning(f"RETRIEVER: Core table {core_table} not found in ChromaDB")
+                        except Exception as e:
+                            logger.error(f"RETRIEVER: Error searching for core table {core_table}: {e}")
+            
+            logger.info(f"RETRIEVER: Final results summary:")
+            logger.info(f"   - Tables found: {len(tables)}")
+            if tables:
+                table_names = list(tables.keys())
+                logger.info(f"   - Table names: {table_names}")
+                for table_name, table_info in tables.items():
+                    logger.info(f"     * {table_name}: score={table_info.get('similarity_score', 'N/A'):.3f}")
+            logger.info(f"   - Relationships found: {len(relationships)}")
+            logger.info(f"   - Schema chunks processed: {len(retrieved_chunks)}")
+            logger.info(f"   - Training examples found: {len(training_examples)}")
+            logger.info(f"   - Schema context length: {len(schema_context)}")
+            logger.info(f"   - Training context length: {len(training_context)}")
+            logger.info(f"RETRIEVER: Schema and training retrieval completed successfully")
             
             return {
                 "tables": tables,
                 "relationships": relationships,
                 "query": query,
-                "retrieved_chunks": retrieved_chunks
+                "enhanced_query": enhanced_query,
+                "retrieved_chunks": retrieved_chunks,
+                "training_examples": training_examples,
+                "schema_context": schema_context,
+                "training_context": training_context,
+                "chunks": retrieved_chunks  # For backward compatibility
             }
             
         except Exception as e:
@@ -393,6 +556,53 @@ class SchemaRetriever:
         except Exception as e:
             logger.error(f"Error retrieving training examples: {e}")
             return []
+    
+    def _build_schema_context(self, tables: Dict[str, Any], relationships: List[Dict[str, Any]], retrieved_chunks: List[Dict[str, Any]]) -> str:
+        """Build schema context from retrieved information."""
+        if not tables and not relationships:
+            return ""
+        
+        context_parts = ["## DATABASE SCHEMA INFORMATION:"]
+        
+        # Add table information
+        for table_name, table_info in tables.items():
+            context_parts.append(f"\n### Table: {table_name}")
+            context_parts.append(f"Schema: {table_info.get('schema', '')}")
+            context_parts.append(f"Description: {table_info.get('table_info', '')}")
+            
+            # Add columns
+            columns = table_info.get('columns', [])
+            if columns:
+                context_parts.append("Columns:")
+                for col in columns[:10]:  # Limit to first 10 columns
+                    col_name = col.get('name', '')
+                    col_type = col.get('data_type', '')
+                    col_desc = col.get('description', '')
+                    context_parts.append(f"  - {col_name} ({col_type}): {col_desc}")
+        
+        # Add relationships
+        if relationships:
+            context_parts.append("\n### Relationships:")
+            for rel in relationships[:5]:  # Limit to first 5 relationships
+                context_parts.append(f"  - {rel.get('description', '')}")
+        
+        return "\n".join(context_parts)
+    
+    def _build_training_context(self, training_examples: List[Dict[str, Any]]) -> str:
+        """Build training context from retrieved examples."""
+        if not training_examples:
+            return ""
+        
+        context_parts = ["## RELEVANT TRAINING EXAMPLES:"]
+        
+        for i, example in enumerate(training_examples[:3], 1):  # Top 3 examples
+            content = example.get("content", "")
+            similarity = example.get("similarity_score", 0)
+            
+            context_parts.append(f"\n### Example {i} (Similarity: {similarity:.3f}):")
+            context_parts.append(content)
+        
+        return "\n".join(context_parts)
 
 
 def main():

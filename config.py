@@ -31,15 +31,11 @@ class DatabaseConfig(BaseSettings):
 class LLMConfig(BaseSettings):
     """LLM configuration settings."""
     
-    provider: str = Field(default="local", description="LLM provider: 'local' or 'openai'")
+    provider: str = Field(default="groq", description="LLM provider: GROQ ONLY")
     
-    # Local LLM settings
-    local_model: str = Field(default="mistral", description="Local model name for Ollama")
-    local_url: str = Field(default="http://localhost:11434", description="Ollama API URL")
-    
-    # OpenAI settings
-    openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key")
-    openai_model: str = Field(default="gpt-3.5-turbo", description="OpenAI model name")
+    # Groq settings (ONLY LLM provider)
+    groq_api_key: Optional[str] = Field(default=None, description="Groq API key - set via LLM_GROQ_API_KEY environment variable")
+    groq_model: str = Field(default="llama-3.1-8b-instant", description="Groq model name")
     
     # Generation parameters
     temperature: float = Field(default=0.1, description="Temperature for text generation")

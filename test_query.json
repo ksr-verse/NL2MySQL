@@ -1,7 +1,0 @@
-{
-  "question": "give me identities (First name, last name, displayname and emails, manager display name) who does have accounts on workday, Trakk, Finance and Apache DS. User must have PayrollAnalysis group in Finance application",
-  "include_explanation": false,
-  "validation_level": "standard",
-  "optimization_level": "standard",
-  "max_retries": 3
-}

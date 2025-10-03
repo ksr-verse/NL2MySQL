@@ -7,16 +7,16 @@ Contact: rautela.ks.job@gmail.com for commercial licensing
 
 from typing import Dict, Any, Optional, List
 from loguru import logger
+import os
 
-from retriever import SchemaRetriever
-from prompt_templates_enhanced import EnhancedPromptTemplates
+# Removed old retriever - using two-step Vector DB search only
+from two_step_vector_db_search import TwoStepVectorDBSearch
 from validator import SQLValidator, ValidationLevel
-from context_translator import context_translator
-from optimizer import SQLOptimizer, OptimizationLevel
-from adapters.llm_local import LocalLLMFactory
-from adapters.llm_openai import OpenAIAdapter
-from adapters.llm_sqlcoder import SQLCoderAdapter
-from iiq_feedback import IIQFeedbackManager
+# Removed context_translator - added no value, just complexity
+# Removed schema_aware_llm - not used, replaced by dynamic vector retrieval
+# Removed optimizer - Groq generates well-formatted SQL already
+from adapters.llm_groq import GroqAdapter
+# Removed iiq_feedback - focusing on core functionality
 from config import settings
 
 
@@ -25,17 +25,15 @@ class SQLGenerator:
     
     def __init__(
         self,
-        validation_level: ValidationLevel = ValidationLevel.STANDARD,
-        optimization_level: OptimizationLevel = OptimizationLevel.STANDARD
+        validation_level: ValidationLevel = ValidationLevel.STANDARD
     ):
         """Initialize SQL generator with all components."""
-        self.retriever = SchemaRetriever()
+        # Using only the new two-step Vector DB search - no old retriever needed
         self.validator = SQLValidator(validation_level)
-        self.optimizer = SQLOptimizer(optimization_level)
-        self.enhanced_templates = EnhancedPromptTemplates()
+        self.vector_search = TwoStepVectorDBSearch()
+        # Removed schema_aware_llm - using dynamic vector retrieval instead
         
-        # Initialize feedback manager
-        self.feedback_manager = IIQFeedbackManager()
+        # Removed feedback manager - focusing on core functionality
         
         # Initialize LLM adapter based on configuration
         self.llm_adapter = self._initialize_llm_adapter()
@@ -43,42 +41,40 @@ class SQLGenerator:
         logger.info("SQL Generator initialized successfully")
     
     def _initialize_llm_adapter(self):
-        """Initialize the appropriate LLM adapter."""
+        """Initialize the appropriate LLM adapter - GROQ ONLY."""
         try:
             provider = settings.llm.provider.lower()
             
-            if provider == "sqlcoder":
-                # Use SQLCoder - best for SQL generation
-                adapter = SQLCoderAdapter()
-                if adapter.is_available():
-                    logger.info("Using SQLCoder adapter (SQL-optimized)")
-                    return adapter
-                else:
-                    logger.error("SQLCoder not available")
-                    raise RuntimeError("SQLCoder model not available. Please install transformers and download the model.")
+            # FORCE GROQ USAGE ONLY - NO FALLBACKS
+            logger.info(f"Current provider setting: {provider}")
+            if provider != "groq":
+                logger.warning(f"Provider is {provider}, forcing to groq")
+                provider = "groq"  # Force groq
             
-            elif provider == "openai":
-                if not settings.llm.openai_api_key:
-                    logger.error("OpenAI API key not found")
-                    raise RuntimeError("OpenAI API key required but not provided")
-                
-                adapter = OpenAIAdapter()
-                if adapter.is_available():
-                    return adapter
-                else:
-                    logger.error("OpenAI not available")
-                    raise RuntimeError("OpenAI service not available")
+            # Get API key from settings or environment
+            groq_api_key = settings.llm.groq_api_key or os.getenv("GROQ_API_KEY") or os.getenv("LLM_GROQ_API_KEY")
             
-            else:  # Local LLM (Ollama/GPT4All)
-                adapter = LocalLLMFactory.get_best_available_adapter()
-                if adapter is None:
-                    logger.error("No local LLM adapters available")
-                    raise RuntimeError("No local LLM adapters available. Please install Ollama or GPT4All.")
+            if not groq_api_key:
+                logger.error("Groq API key not found in settings or environment")
+                raise RuntimeError("Groq API key required. Set GROQ_API_KEY or LLM_GROQ_API_KEY environment variable.")
+            
+            # Use Groq API with Llama-3.1-8b-instant - ultra-fast and reliable
+            adapter = GroqAdapter(
+                api_key=groq_api_key,
+                model_name="llama-3.1-8b-instant"  # Force working model
+            )
+            
+            if adapter.is_available():
+                logger.info("Using Groq adapter ONLY (ultra-fast Llama-3.1-8b-instant)")
+                logger.info("Local models disabled - Groq only mode")
                 return adapter
+            else:
+                logger.error("Groq not available - API key invalid or service down")
+                raise RuntimeError("Groq API not available. Check your API key and internet connection.")
                 
         except Exception as e:
-            logger.error(f"Failed to initialize LLM adapter: {e}")
-            raise RuntimeError(f"LLM initialization failed: {e}")
+            logger.error(f"Failed to initialize Groq adapter: {e}")
+            raise RuntimeError(f"Groq initialization failed: {e}")
     
     def generate_sql(
         self,
@@ -101,6 +97,10 @@ class SQLGenerator:
         Returns:
             Dictionary containing generation results
         """
+        logger.info(f"SQL_GEN: Starting SQL generation pipeline")
+        logger.info(f"SQL_GEN: Query: '{natural_language_query}'")
+        logger.info(f"SQL_GEN: Parameters - explanation: {include_explanation}, retries: {max_retries}, validate: {validate_syntax}")
+        
         result = {
             "success": False,
             "natural_language_query": natural_language_query,
@@ -119,46 +119,39 @@ class SQLGenerator:
         }
         
         try:
-            # Step 1: Context-aware translation
-            logger.info(f"Translating query context: {natural_language_query}")
-            translation_result = context_translator.translate_query(natural_language_query)
-            translated_query = translation_result["translated_query"]
+            # Step 1: Use two-step Vector DB search for prompt generation
+            logger.info(f"SQL_GEN: Step 1 - Using two-step Vector DB search")
+            logger.info(f"SQL_GEN: This will handle both schema retrieval and prompt generation")
             
-            # Step 2: Retrieve relevant schema using translated query
-            logger.info(f"Retrieving schema for translated query: {translated_query}")
-            retrieved_schema = self.retriever.retrieve_relevant_schema(translated_query)
+            # The two-step search will handle everything - we don't need the old retriever
+            result["approach"] = "two_step_vector_search"
             
-            if not retrieved_schema.get("tables"):
-                result["warnings"].append("No relevant schema found for the query")
+            # Step 2: Generate SQL with retries
+            logger.info(f"SQL_GEN: Step 2 - Generating SQL with LLM")
+            logger.info(f"SQL_GEN: Starting retry loop (max {max_retries} attempts)")
             
-            # Step 3: Retrieve relevant training examples
-            logger.info(f"Retrieving relevant training examples for: {translated_query}")
-            relevant_examples = self.retriever.retrieve_relevant_examples(translated_query, top_k=3)
-            
-            # Format schema context for the prompt
-            schema_context = self.retriever.format_schema_context(retrieved_schema)
-            result["schema_context"] = schema_context
-            result["translation_result"] = translation_result
-            result["relevant_examples"] = relevant_examples
-            
-            # Step 3: Generate SQL with retries
             sql_query = None
             for attempt in range(max_retries):
                 result["generation_metadata"]["attempts"] = attempt + 1
+                logger.info(f"SQL_GEN: Attempt {attempt + 1}/{max_retries}")
                 
                 try:
+                    logger.info(f"SQL_GEN: Calling _generate_sql_with_llm()")
                     sql_query = self._generate_sql_with_llm(
-                        natural_language_query, schema_context, attempt, translation_result, relevant_examples
+                        natural_language_query, attempt
                     )
                     
                     if sql_query and sql_query.strip():
+                        logger.info(f"SQL_GEN: SQL generated successfully on attempt {attempt + 1}")
+                        logger.info(f"SQL_GEN: Generated SQL: {sql_query[:100]}...")
                         break
                     else:
-                        logger.warning(f"Empty SQL generated on attempt {attempt + 1}")
+                        logger.warning(f"SQL_GEN: Empty SQL generated on attempt {attempt + 1}")
                         
                 except Exception as e:
-                    logger.warning(f"SQL generation attempt {attempt + 1} failed: {e}")
+                    logger.warning(f"SQL_GEN: SQL generation attempt {attempt + 1} failed: {e}")
                     if attempt == max_retries - 1:
+                        logger.error(f"SQL_GEN: All generation attempts failed. Last error: {e}")
                         result["errors"].append(f"All generation attempts failed. Last error: {e}")
                         return result
             
@@ -167,29 +160,28 @@ class SQLGenerator:
                 return result
             
             result["sql_query"] = sql_query
-            
-            # Record query generation for learning
-            self.feedback_manager.record_query_execution(
-                natural_query=natural_language_query,
-                sql_query=sql_query,
-                execution_time=0.0,  # Will be updated after execution
-                row_count=0,  # Will be updated after execution
-                success=True,
-                error_message=""
-            )
+            logger.info(f"SQL_GEN: SQL stored in result: {len(sql_query)} characters")
             
             # Step 3: Validate the generated SQL
             if validate_syntax:
-                logger.info("Validating generated SQL")
+                logger.info(f"SQL_GEN: Step 3 - Validating generated SQL")
                 validation_result = self.validator.validate_query(sql_query)
                 result["validation_result"] = validation_result
                 
+                logger.info(f"SQL_GEN: Validation results:")
+                logger.info(f"   - Valid: {validation_result.get('valid', False)}")
+                logger.info(f"   - Errors: {len(validation_result.get('errors', []))}")
+                logger.info(f"   - Warnings: {len(validation_result.get('warnings', []))}")
+                logger.info(f"   - Security issues: {len(validation_result.get('security_issues', []))}")
+                
                 if not validation_result["valid"]:
+                    logger.warning(f"SQL_GEN: SQL validation failed")
                     # Try to fix common issues and regenerate
                     if attempt < max_retries - 1:
-                        logger.info("Attempting to fix validation errors")
+                        logger.info(f"SQL_GEN: Attempting to fix validation errors")
                         fixed_sql = self._attempt_sql_fix(sql_query, validation_result["errors"])
                         if fixed_sql and fixed_sql != sql_query:
+                            logger.info(f"SQL_GEN: SQL fixed, re-validating")
                             sql_query = fixed_sql
                             result["sql_query"] = sql_query
                             # Re-validate
@@ -198,29 +190,40 @@ class SQLGenerator:
                 
                 result["warnings"].extend(validation_result.get("warnings", []))
                 result["warnings"].extend(validation_result.get("security_issues", []))
+            else:
+                logger.info(f"SQL_GEN: Skipping validation (validate_syntax=False)")
             
-            # Step 4: Optimize the SQL
+            # Step 4: Optimize the SQL (Groq generates well-formatted SQL, so skip optimization)
             if optimize_query:
-                logger.info("Optimizing generated SQL")
-                optimization_result = self.optimizer.optimize_query(sql_query, retrieved_schema)
-                result["optimization_result"] = optimization_result
-                
-                if optimization_result["optimized_query"] != sql_query:
-                    result["sql_query"] = optimization_result["optimized_query"]
-                    result["warnings"].extend(optimization_result.get("warnings", []))
+                logger.info(f"SQL_GEN: No additional post-processing")
+                result["optimization_result"] = {
+                    "optimized_query": sql_query,
+                    "optimizations_applied": [],
+                    "warnings": []
+                }
+            else:
+                logger.info(f"SQL_GEN: No additional post-processing")
             
             # Step 5: Generate explanation if requested
             if include_explanation:
-                logger.info("Generating SQL explanation")
+                logger.info(f"SQL_GEN: Step 5 - Generating SQL explanation")
                 try:
                     explanation = self._generate_explanation(result["sql_query"], schema_context)
                     result["explanation"] = explanation
+                    logger.info(f"SQL_GEN: Explanation generated ({len(explanation)} characters)")
                 except Exception as e:
-                    logger.warning(f"Failed to generate explanation: {e}")
+                    logger.warning(f"SQL_GEN: Failed to generate explanation: {e}")
                     result["warnings"].append("Could not generate explanation")
+            else:
+                logger.info(f"SQL_GEN: Skipping explanation (include_explanation=False)")
             
             result["success"] = True
-            logger.info("SQL generation completed successfully")
+            logger.info(f"SQL_GEN: SQL generation completed successfully!")
+            logger.info(f"SQL_GEN: Final result summary:")
+            logger.info(f"   - SQL length: {len(result['sql_query'])}")
+            logger.info(f"   - Explanation length: {len(result.get('explanation', ''))}")
+            logger.info(f"   - Warnings: {len(result['warnings'])}")
+            logger.info(f"   - Errors: {len(result['errors'])}")
             
         except Exception as e:
             logger.error(f"Error in SQL generation: {e}")
@@ -231,39 +234,50 @@ class SQLGenerator:
     def _generate_sql_with_llm(
         self, 
         natural_language_query: str, 
-        schema_context: str, 
         attempt: int = 0,
-        translation_result: Optional[Dict[str, Any]] = None,
-        relevant_examples: Optional[List[Dict[str, Any]]] = None
+        translation_result: Optional[Dict[str, Any]] = None
     ) -> str:
         """Generate SQL using the LLM adapter with enhanced prompts."""
         
-        # Use optimized prompts for different providers
-        if settings.llm.provider.lower() == "sqlcoder":
-            # Use SQLCoder-specific prompt format
-            prompt = self.enhanced_templates.build_for_sqlcoder(
-                user_query=natural_language_query,
-                schema_context=schema_context
-            )
-        else:
-            # Use enhanced prompt with all features
-            prompt = self.enhanced_templates.build_enhanced_prompt(
-                user_query=natural_language_query,
-                schema_context=schema_context,
-                include_synonyms=True,
-                include_examples=False,  # We'll use relevant examples instead
-                translation_result=translation_result,
-                relevant_examples=relevant_examples,
-                include_learning=False  # Disable learning for speed
-            )
+        logger.info(f"LLM_GEN: Starting LLM SQL generation")
+        logger.info(f"LLM_GEN: Query: '{natural_language_query}'")
+        logger.info(f"LLM_GEN: Attempt: {attempt + 1}")
+        
+        # Build prompt using two-step Vector DB search
+        logger.info(f"LLM_GEN: Building prompt using two-step Vector DB search")
+        # Get complete prompt from Vector DB (includes schema + training + prompt template)
+        complete_prompt = self.vector_search.generate_prompt_with_definitions(natural_language_query)
+        
+        logger.info(f"LLM_GEN: Prompt components:")
+        logger.info(f"   - Complete prompt length: {len(complete_prompt)}")
+        logger.info(f"   - Prompt preview: {complete_prompt[:300]}...")
+        
+        # Use the complete prompt from two-step search
+        prompt = complete_prompt
         
         # Add retry context for subsequent attempts
         if attempt > 0:
+            logger.info(f"LLM_GEN: Adding retry context for attempt {attempt + 1}")
             retry_context = f"\n\nRETRY ATTEMPT {attempt}: Previous attempt failed. Please ensure the SQL is syntactically correct and follows MySQL standards."
             prompt += retry_context
         
+        logger.info(f"LLM_GEN: Final prompt length: {len(prompt)}")
+        logger.info(f"LLM_GEN: Sending prompt to Groq LLM")
+        logger.info(f"LLM_GEN: COMPLETE FINAL PROMPT:")
+        logger.info(f"LLM_GEN: ================================================================================")
+        logger.info(prompt)
+        logger.info(f"LLM_GEN: ================================================================================")
+        
         # Generate SQL using the LLM
-        return self.llm_adapter.generate_sql(prompt)
+        try:
+            sql_result = self.llm_adapter.generate_sql(prompt)
+            logger.info(f"LLM_GEN: LLM response received")
+            logger.info(f"LLM_GEN: Generated SQL: {sql_result[:100]}...")
+            logger.info(f"LLM_GEN: SQL length: {len(sql_result)}")
+            return sql_result
+        except Exception as e:
+            logger.error(f"LLM_GEN: LLM generation failed: {e}")
+            raise
     
     def _attempt_sql_fix(self, sql_query: str, errors: List[str]) -> str:
         """Attempt to fix common SQL errors."""

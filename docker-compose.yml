@@ -1,5 +1,11 @@
 version: '3.8'
 
+# NL2MySQL Docker Compose - Groq-Only Setup
+# Usage: 
+#   1. Set GROQ_API_KEY environment variable: export GROQ_API_KEY=your_key_here
+#   2. Run: docker-compose up -d
+#   3. Access: http://localhost:8000/docs
+
 services:
   nl2mysql:
     build: .
@@ -11,11 +17,10 @@ services:
       - DB_MAX_POOL_SIZE=10
       - DB_TIMEOUT=30
       
-      # LLM configuration
-      - LLM_PROVIDER=local  # or 'openai'
-      - LLM_LOCAL_MODEL=phi
-      - LLM_LOCAL_URL=http://ollama:11434
-      - LLM_OPENAI_API_KEY=  # Set if using OpenAI
+      # LLM configuration (Groq ONLY)
+      - LLM_PROVIDER=groq
+      - LLM_GROQ_API_KEY=${GROQ_API_KEY}  # Set your Groq API key
+      - LLM_GROQ_MODEL=llama-3.1-8b-instant
       - LLM_TEMPERATURE=0.1
       - LLM_MAX_TOKENS=1000
       
@@ -36,7 +41,6 @@ services:
       - ./logs:/app/logs
     
     depends_on:
-      - ollama
       - mysql
     
     restart: unless-stopped
@@ -47,25 +51,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_ORIGINS=*
-    restart: unless-stopped
-    
-    # Uncomment the following lines if you have NVIDIA GPU support
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
 
   # MySQL database for IdentityIQ
   mysql:
@@ -90,8 +75,6 @@ services:
       start_period: 10s
 
 volumes:
-  ollama_data:
-    driver: local
   mysql_data:
     driver: local
 
